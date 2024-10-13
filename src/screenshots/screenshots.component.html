@@ -1,0 +1,6 @@
+<div class="screenshots-grid">
+    <div *ngFor="let screenshot of screenshotIds" class="screenshot-item">
+      <img [src]="'/public/' + gameId + '/' + screenshot + '.png'" [alt]="screenshot" />
+    </div>
+  </div>
+  

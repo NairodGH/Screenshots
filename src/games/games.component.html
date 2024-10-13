@@ -1,0 +1,6 @@
+<div class="games-grid">
+    <div *ngFor="let game of gameIds" class="game-item">
+      <img [src]="'/public/' + game + '/0.png'" [alt]="game" />
+      <h3>{{ game }}</h3>
+    </div>
+  </div>
