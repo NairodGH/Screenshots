@@ -1,0 +1,35 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Updated gradient direction left to right -->
+    <linearGradient id="gradient" x1="0%" y1="50%" x2="100%" y2="50%">
+      <stop offset="0%" style="stop-color:#FF40A0"/>
+      <stop offset="50%" style="stop-color:#FF1B6B"/>
+      <stop offset="100%" style="stop-color:#7000FF"/>
+    </linearGradient>
+    
+    <!-- Mask definition -->
+    <mask id="s-mask">
+      <rect width="200" height="200" fill="white"/>
+      <path d="M 45 60 
+               C 45 35, 100 25, 145 45
+               L 135 65
+               C 105 50, 80 55, 80 75
+               C 80 95, 155 100, 155 135
+               C 155 170, 95 180, 55 155
+               L 65 135
+               C 95 155, 130 150, 130 135
+               C 130 115, 55 110, 45 60" 
+            fill="black"/>
+    </mask>
+  </defs>
+  
+  <!-- Hexagon with masked S -->
+  <path d="M100 20 
+           L170 60
+           L170 140
+           L100 180
+           L30 140
+           L30 60 Z" 
+        fill="url(#gradient)"
+        mask="url(#s-mask)"/>
+</svg>
