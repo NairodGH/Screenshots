@@ -1,7 +1,7 @@
 import { Component, OnInit } from "@angular/core";
 import { ActivatedRoute, RouterModule } from "@angular/router";
 import { CommonModule } from "@angular/common";
-import { gameData } from "../game-data";
+import { Parser } from "../parser";
 
 @Component({
     selector: "screenshots",
@@ -14,16 +14,27 @@ export class ScreenshotsComponent implements OnInit {
     gameId!: string;
     screenshots: { id: number; description: string }[] = [];
 
-    constructor(private route: ActivatedRoute) {}
+    constructor(
+        private route: ActivatedRoute,
+        private parser: Parser
+    ) {}
 
-    ngOnInit(): void {
+    async ngOnInit(): Promise<void> {
+        const data = await this.parser.parseTSV<{
+            game: string;
+            id: number;
+            description: string;
+        }>("/data.tsv");
+
         this.route.params.subscribe((params) => {
             this.gameId = params["gameId"];
-            this.screenshots = Object.entries(
-                gameData[this.gameId as keyof typeof gameData] || {}
-            )
-                .map(([id, description]) => ({ id: Number(id), description }))
-                .filter((screenshot) => screenshot.id !== 0); // Exclude poster ID 0 if needed
+            this.screenshots = data
+                .filter((entry) => entry.game === this.gameId)
+                .map((entry) => ({
+                    id: entry.id,
+                    description: entry.description,
+                }))
+                .filter((screenshot) => screenshot.id != 0); // Exclude posters if needed
         });
     }
 }
