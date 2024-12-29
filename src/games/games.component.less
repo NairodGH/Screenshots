@@ -1,14 +1,15 @@
-.games-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 16px;
-  padding: 16px;
+.centered {
+    display: flex;
+    height: 100%;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+}
 
-  .game-item {
-    text-align: center;
-    img {
-      width: 100%;
-      height: auto;
-    }
-  }
+.top-right {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 1000;
 }

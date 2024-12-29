@@ -1,8 +1,22 @@
-<div class="games-grid">
-    <div *ngFor="let game of gameIds" class="game-item">
-        <a [routerLink]="[game]">
-            <img [src]="game + '/0.png'" [alt]="game" />
-            <h3>{{ game }}</h3>
-        </a>
-    </div>
+<link
+    href="https://fonts.googleapis.com/icon?family=Material+Icons"
+    rel="stylesheet"
+/>
+
+<div *ngIf="!games.length" class="centered" (click)="getData()">
+    <p>Click to select local screenshots TSV file</p>
+</div>
+
+<div *ngIf="games.length">
+    <mat-grid-list cols="4">
+        <mat-grid-tile *ngFor="let game of games">
+            <a [routerLink]="[game]">
+                <img [src]="game + '/0.png'" [alt]="game" class="centered" />
+            </a>
+        </mat-grid-tile>
+    </mat-grid-list>
+
+    <button mat-icon-button class="top-right" (click)="openPopup()">
+        <mat-icon>add</mat-icon>
+    </button>
 </div>

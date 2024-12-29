@@ -1,17 +1,16 @@
-import { bootstrapApplication } from '@angular/platform-browser';
-import { provideRouter } from '@angular/router';
-import { GamesComponent } from './games/games.component';
-import { ScreenshotsComponent } from './screenshots/screenshots.component';
-import { RouterComponent } from './router.component';
-
-const routes = [
-  { path: '', component: GamesComponent },
-  { path: ':gameId', component: ScreenshotsComponent }
-];
+import { ScreenshotsComponent } from "./screenshots/screenshots.component";
+import { provideAnimations } from "@angular/platform-browser/animations";
+import { bootstrapApplication } from "@angular/platform-browser";
+import { GamesComponent } from "./games/games.component";
+import { RouterComponent } from "./router.component";
+import { provideRouter } from "@angular/router";
 
 bootstrapApplication(RouterComponent, {
-  providers: [
-    provideRouter(routes)
-  ]
-})
-.catch((err) => console.error(err));
+    providers: [
+        provideRouter([
+            { path: "", component: GamesComponent },
+            { path: ":game", component: ScreenshotsComponent },
+        ]),
+        provideAnimations(),
+    ],
+});

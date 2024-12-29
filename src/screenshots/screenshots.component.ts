@@ -1,12 +1,13 @@
 import { Component, OnInit } from "@angular/core";
 import { ActivatedRoute, RouterModule } from "@angular/router";
 import { CommonModule } from "@angular/common";
-import { Parser } from "../parser";
+import { Data } from "../data";
+import { MatGridListModule } from "@angular/material/grid-list";
 
 @Component({
     selector: "screenshots",
     standalone: true,
-    imports: [RouterModule, CommonModule],
+    imports: [RouterModule, CommonModule, MatGridListModule],
     templateUrl: "./screenshots.component.html",
     styleUrls: ["./screenshots.component.less"],
 })
@@ -14,27 +15,7 @@ export class ScreenshotsComponent implements OnInit {
     gameId!: string;
     screenshots: { id: number; description: string }[] = [];
 
-    constructor(
-        private route: ActivatedRoute,
-        private parser: Parser
-    ) {}
+    constructor(private route: ActivatedRoute, private data: Data) {}
 
-    async ngOnInit(): Promise<void> {
-        const data = await this.parser.parseTSV<{
-            game: string;
-            id: number;
-            description: string;
-        }>("/data.tsv");
-
-        this.route.params.subscribe((params) => {
-            this.gameId = params["gameId"];
-            this.screenshots = data
-                .filter((entry) => entry.game === this.gameId)
-                .map((entry) => ({
-                    id: entry.id,
-                    description: entry.description,
-                }))
-                .filter((screenshot) => screenshot.id != 0); // Exclude posters if needed
-        });
-    }
+    async ngOnInit(): Promise<void> {}
 }
