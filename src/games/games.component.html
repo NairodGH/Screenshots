@@ -16,7 +16,12 @@
         </mat-grid-tile>
     </mat-grid-list>
 
-    <button mat-icon-button class="top-right" (click)="openPopup()">
-        <mat-icon>add</mat-icon>
-    </button>
+    <div class="buttons">
+        <button mat-icon-button (click)="popup()">
+            <mat-icon>add_circle_outline</mat-icon>
+        </button>
+        <button mat-icon-button (click)="delete()">
+            <mat-icon>delete_outline</mat-icon>
+        </button>
+    </div>
 </div>

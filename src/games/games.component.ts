@@ -5,13 +5,11 @@ import {
     MAT_DIALOG_DATA,
     MatDialog,
     MatDialogModule,
-    MatDialogContent,
 } from "@angular/material/dialog";
 import { MatGridListModule } from "@angular/material/grid-list";
 import { MatButtonModule } from "@angular/material/button";
 import { MatIconModule } from "@angular/material/icon";
 import { FormsModule } from "@angular/forms";
-import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatInputModule } from "@angular/material/input";
 import { Data } from "../data";
 
@@ -38,16 +36,16 @@ export class GamesComponent implements OnInit {
     constructor(private data: Data, private dialog: MatDialog) {}
 
     async ngOnInit(): Promise<void> {
-        const data = await this.data.getData(false);
+        const data = await this.data.checkDB();
         if (data) this.games = Array.from(data.keys());
     }
 
     async getData(): Promise<void> {
-        const data = await this.data.getData(true);
+        const data = await this.data.getData();
         if (data) this.games = Array.from(data.keys());
     }
 
-    openPopup(): void {
+    popup(): void {
         this.dialog
             .open(PopupContentComponent, {
                 data: {
@@ -55,9 +53,17 @@ export class GamesComponent implements OnInit {
                 },
             })
             .afterClosed()
-            .subscribe((result) => {
-                if (result) console.log("Selected game:", result);
+            .subscribe(async (result) => {
+                if (result) {
+                    await this.data.addData(result);
+                    this.games.push(result);
+                }
             });
+    }
+
+    delete(): void {
+        this.data.deleteDB();
+        location.reload();
     }
 }
 
@@ -76,7 +82,7 @@ export class GamesComponent implements OnInit {
         </div>
     `,
     standalone: true,
-    imports: [MatDialogModule, MatFormFieldModule, MatInputModule, FormsModule],
+    imports: [MatDialogModule, MatInputModule, MatButtonModule, FormsModule],
 })
 export class PopupContentComponent {
     constructor(@Inject(MAT_DIALOG_DATA) public data: DialogData) {}
