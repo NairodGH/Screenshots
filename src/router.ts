@@ -7,4 +7,4 @@ import { Component } from "@angular/core";
     imports: [RouterModule],
     template: `<router-outlet></router-outlet>`,
 })
-export class RouterComponent {}
+export class Router {}

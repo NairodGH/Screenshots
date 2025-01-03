@@ -81,27 +81,23 @@ export class Data {
         });
 
     async checkDB(): Promise<Map<string, string[]> | null> {
-        if ((await indexedDB.databases()).some(db => db.name === "screenshots"))
+        if (
+            (await indexedDB.databases()).some(
+                (db) => db.name === "screenshots"
+            )
+        )
             return this.getFromDB(await this.getDB(), "data");
         return null;
     }
 
     async getData(): Promise<Map<string, string[]> | null> {
         try {
-            const handle = (
-                await window.showOpenFilePicker({
-                    types: [
-                        {
-                            description: "TSV Files",
-                            accept: { "text/tab-separated-values": [".tsv"] },
-                        },
-                    ],
-                })
-            )[0];
-            const text = await (await handle.getFile()).text();
-            const dataMap = parse(text, {
+            const handle = await window.showDirectoryPicker({
+                mode: "readwrite",
+            });
+            const text = await(await(await handle.getFileHandle("data.tsv")).getFile()).text();
+            const data = parse(text, {
                 delimiter: "\t",
-                headers: true,
             }).reduce(
                 (
                     acc: Map<string, string[]>,
@@ -115,11 +111,9 @@ export class Data {
                 new Map<string, string[]>()
             );
             const db = await this.getDB();
-            await Promise.all([
-                this.storeInDB(db, "handle", handle),
-                this.storeInDB(db, "data", dataMap),
-            ]);
-            return dataMap;
+            await this.storeInDB(db, "handle", handle);
+            await this.storeInDB(db, "data", data);
+            return data;
         } catch {
             return null;
         }
@@ -131,13 +125,11 @@ export class Data {
         description: string = "poster"
     ): Promise<void> {
         const db = await this.getDB();
-        const [data, handle] = await Promise.all([
-            this.getFromDB(db, "data"),
-            this.getFromDB(db, "handle"),
-        ]);
+        const data = await this.getFromDB(db, "data");
+        const handle = await (await this.getFromDB(db, "handle")).getFileHandle("data.tsv");
         const writable = await handle.createWritable();
         await writable.write(
-            await(await handle.getFile()).text() +
+            (await (await handle.getFile()).text()) +
                 `${name}\t${id}\t${description}\n`
         );
         await writable.close();
@@ -146,5 +138,19 @@ export class Data {
             "data",
             new Map(data).set(name, [description])
         );
+    }
+
+    async saveImage(game: string, url: string): Promise<void> {
+        const handle = await this.getFromDB(await this.getDB(), "handle");
+        const blob = await (await fetch(url)).blob();
+        const gameFolderHandle = await handle.getDirectoryHandle(game, {
+            create: true,
+        });
+        const imageFileHandle = await gameFolderHandle.getFileHandle("0.png", {
+            create: true,
+        });
+        const writable = await imageFileHandle.createWritable();
+        await writable.write(blob);
+        await writable.close();
     }
 }

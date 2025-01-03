@@ -1,5 +1,7 @@
 interface Window {
-    showOpenFilePicker(options?: FilePickerOptions): Promise;
+    showDirectoryPicker(options?: {
+        mode?: "read" | "readwrite";
+    }): Promise<FileSystemDirectoryHandle>;
 }
 
 declare module "csv-rex" {
@@ -7,8 +9,6 @@ declare module "csv-rex" {
         input: string,
         options?: {
             delimiter?: string;
-            headers?: boolean;
-            skipEmptyLines?: boolean;
         }
     ): T[];
 }
