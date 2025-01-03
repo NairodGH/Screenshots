@@ -6,7 +6,6 @@ import { MatGridListModule } from "@angular/material/grid-list";
 
 @Component({
     selector: "screenshots",
-    standalone: true,
     imports: [RouterModule, CommonModule, MatGridListModule],
     template: `
         <mat-grid-list cols="2" rowHeight="2:1">
@@ -16,7 +15,7 @@ import { MatGridListModule } from "@angular/material/grid-list";
             </mat-grid-tile>
         </mat-grid-list>
     `,
-    styles: [],
+    styles: []
 })
 export class Screenshots implements OnInit {
     gameId!: string;

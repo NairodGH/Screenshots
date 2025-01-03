@@ -15,7 +15,6 @@ import { Data } from "./data";
 
 @Component({
     selector: "games",
-    standalone: true,
     imports: [
         RouterModule,
         CommonModule,
@@ -78,7 +77,7 @@ import { Data } from "./data";
                 right: 0;
             }
         `,
-    ],
+    ]
 })
 export class Games implements OnInit {
     protected games: string[] = [];
@@ -121,7 +120,6 @@ export class Games implements OnInit {
 
 @Component({
     selector: "dialog",
-    standalone: true,
     imports: [
         CommonModule,
         MatDialogModule,
@@ -199,7 +197,7 @@ export class Games implements OnInit {
                 color: #888;
             }
         `,
-    ],
+    ]
 })
 export class PopupContentComponent {
     imageUrl: string | null = null;
