@@ -144,16 +144,16 @@ export class Games implements OnInit {
                     class="image-drop-zone"
                     (dragover)="onDragOver($event)"
                     (drop)="onDrop($event)"
-                    [class.has-image]="imageUrl"
+                    [class.has-image]="data.imageUrl"
                 >
-                    <p *ngIf="!imageUrl">Drag & Drop an image here</p>
+                    <p *ngIf="!data.imageUrl">Drag & Drop an image here</p>
                     <img
-                        *ngIf="imageUrl"
-                        [src]="imageUrl"
+                        *ngIf="data.imageUrl"
+                        [src]="data.imageUrl"
                         alt="Dropped Image"
                     />
                 </div>
-                <mat-error *ngIf="!imageUrl && gameForm.submitted">
+                <mat-error *ngIf="!data.imageUrl && gameForm.submitted">
                     An image is required.
                 </mat-error>
             </form>
@@ -162,7 +162,7 @@ export class Games implements OnInit {
             <button
                 mat-button
                 [mat-dialog-close]="data"
-                [disabled]="!gameForm.form.valid || !imageUrl"
+                [disabled]="!gameForm.form.valid || !data.imageUrl"
                 (click)="gameForm.ngSubmit.emit()"
             >
                 Add
@@ -197,11 +197,9 @@ export class Games implements OnInit {
                 color: #888;
             }
         `,
-    ]
+    ],
 })
 export class PopupContentComponent {
-    imageUrl: string | null = null;
-
     constructor(@Inject(MAT_DIALOG_DATA) public data: any) {}
 
     onDragOver(event: DragEvent): void {
@@ -219,15 +217,14 @@ export class PopupContentComponent {
                 const item = items[i];
                 if (item.kind === "string" && item.type.match("^text/plain")) {
                     item.getAsString((url) => {
-                        this.imageUrl = this.data.imageUrl = url;
+                        this.data.imageUrl = url;
                     });
                 } else if (item.kind === "file" && item.type.match("^image/")) {
                     const file = item.getAsFile();
                     if (file) {
                         const reader = new FileReader();
                         reader.onload = (e: any) => {
-                            this.imageUrl = this.data.imageUrl =
-                                e.target.result;
+                            this.data.imageUrl = e.target.result;
                         };
                         reader.readAsDataURL(file);
                     }
