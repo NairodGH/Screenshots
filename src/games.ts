@@ -1,6 +1,6 @@
 import { Component, OnInit, Inject } from "@angular/core";
 import { RouterModule } from "@angular/router";
-import { CommonModule } from "@angular/common";
+import { CommonModule, NgOptimizedImage } from "@angular/common";
 import {
     MAT_DIALOG_DATA,
     MatDialog,
@@ -24,6 +24,7 @@ import { Data } from "./data";
         MatDialogModule,
         MatInputModule,
         FormsModule,
+        NgOptimizedImage,
     ],
     template: `
         <link
@@ -31,7 +32,7 @@ import { Data } from "./data";
             rel="stylesheet"
         />
 
-        <div *ngIf="!games.length" class="centered" (click)="getData()">
+        <div *ngIf="!games.length" class="centered" (click)="getScreenshots()">
             <p>Click to select local screenshots TSV file</p>
         </div>
 
@@ -40,9 +41,10 @@ import { Data } from "./data";
                 <mat-grid-tile *ngFor="let game of games">
                     <a [routerLink]="[game]">
                         <img
-                            [src]="game + '/0.png'"
-                            [alt]="game"
-                            class="centered"
+                            [ngSrc]="game + '/' + game + '.png'"
+                            [alt]="game + '/' + game + '.png missing'"
+                            priority
+                            fill
                         />
                     </a>
                 </mat-grid-tile>
@@ -77,7 +79,7 @@ import { Data } from "./data";
                 right: 0;
             }
         `,
-    ]
+    ],
 })
 export class Games implements OnInit {
     protected games: string[] = [];
@@ -85,18 +87,18 @@ export class Games implements OnInit {
     constructor(private data: Data, private dialog: MatDialog) {}
 
     async ngOnInit(): Promise<void> {
-        const data = await this.data.checkDB();
+        const data = await this.data.getScreenshots();
         if (data) this.games = Array.from(data.keys());
     }
 
-    async getData(): Promise<void> {
-        const data = await this.data.getData();
+    async getScreenshots(): Promise<void> {
+        const data = await this.data.getScreenshots();
         if (data) this.games = Array.from(data.keys());
     }
 
     popup(): void {
         this.dialog
-            .open(PopupContentComponent, {
+            .open(Dialog, {
                 data: {
                     game: "",
                     imageUrl: "",
@@ -105,15 +107,19 @@ export class Games implements OnInit {
             .afterClosed()
             .subscribe(async (result) => {
                 if (result) {
-                    await this.data.addData(result.game);
+                    // game's icon "screenshot" has its name
+                    await this.data.addScreenshot(
+                        result.game,
+                        result.game,
+                        result.imageUrl
+                    );
                     this.games.push(result.game);
-                    this.data.saveImage(result.game, result.imageUrl);
                 }
             });
     }
 
     delete(): void {
-        this.data.deleteDB();
+        this.data.delete();
         location.reload();
     }
 }
@@ -141,10 +147,10 @@ export class Games implements OnInit {
                     />
                 </mat-form-field>
                 <div
-                    class="image-drop-zone"
+                    class="dropzone"
                     (dragover)="onDragOver($event)"
                     (drop)="onDrop($event)"
-                    [class.has-image]="data.imageUrl"
+                    [class.hasImage]="data.imageUrl"
                 >
                     <p *ngIf="!data.imageUrl">Drag & Drop an image here</p>
                     <img
@@ -171,35 +177,32 @@ export class Games implements OnInit {
     `,
     styles: [
         `
-            .image-drop-zone {
-                width: 200px;
-                height: 200px;
-                border: 2px dashed #ccc;
+            .dropzone {
+                width: 20vw;
+                height: 20vw;
+                border: 0.3vw dashed #ccc;
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                margin-top: 16px;
-                position: relative;
             }
 
-            .image-drop-zone.has-image {
+            .dropzone.hasImage {
                 border-color: green;
             }
 
-            .image-drop-zone img {
+            .dropzone img {
                 max-width: 100%;
                 max-height: 100%;
-                position: absolute;
             }
 
-            .image-drop-zone p {
+            .dropzone p {
                 text-align: center;
                 color: #888;
             }
         `,
     ],
 })
-export class PopupContentComponent {
+export class Dialog {
     constructor(@Inject(MAT_DIALOG_DATA) public data: any) {}
 
     onDragOver(event: DragEvent): void {
@@ -210,25 +213,15 @@ export class PopupContentComponent {
     onDrop(event: DragEvent): void {
         event.preventDefault();
         event.stopPropagation();
-
-        const items = event.dataTransfer?.items;
-        if (items) {
-            for (let i = 0; i < items.length; i++) {
-                const item = items[i];
-                if (item.kind === "string" && item.type.match("^text/plain")) {
-                    item.getAsString((url) => {
-                        this.data.imageUrl = url;
-                    });
-                } else if (item.kind === "file" && item.type.match("^image/")) {
-                    const file = item.getAsFile();
-                    if (file) {
-                        const reader = new FileReader();
-                        reader.onload = (e: any) => {
-                            this.data.imageUrl = e.target.result;
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                }
+        const item = event.dataTransfer!.items[0];
+        if (item.kind === "string" && item.type.match("^text/plain"))
+            item.getAsString((url) => (this.data.imageUrl = url));
+        else if (item.kind === "file" && item.type.match("^image/")) {
+            const file = item.getAsFile();
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => (this.data.imageUrl = e.target!.result);
+                reader.readAsDataURL(file);
             }
         }
     }

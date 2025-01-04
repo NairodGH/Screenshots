@@ -1,15 +1,17 @@
 import { Injectable } from "@angular/core";
-import { parse } from "csv-rex";
 
 @Injectable({
     providedIn: "root",
 })
 export class Data {
+    private db: IDBDatabase | null = null;
+
     getDB = (): Promise<IDBDatabase> =>
         new Promise((resolve, reject) => {
             const request = indexedDB.open("screenshots");
             request.onupgradeneeded = () => {
-                request.result.createObjectStore("data", { keyPath: "key" });
+                console.log("Database created.");
+                request.result.createObjectStore("handle");
             };
             request.onsuccess = () => {
                 console.log("Database opened.");
@@ -21,53 +23,42 @@ export class Data {
             };
         });
 
-    getFromDB = (db: IDBDatabase, key: string): Promise<any> =>
+    getHandle = (): Promise<FileSystemDirectoryHandle> =>
         new Promise((resolve, reject) => {
-            const request = db
-                .transaction("data", "readonly")
-                .objectStore("data")
-                .get(key);
+            const request = this.db!.transaction("handle", "readonly")
+                .objectStore("handle")
+                .get("handle");
             request.onsuccess = () => {
-                const result = request.result?.value;
+                const result = request.result;
                 if (result) {
-                    console.log(
-                        `Data retrieved successfully for key ${key}:`,
-                        result
-                    );
+                    console.log("Handle retrieved.");
                 } else {
-                    console.warn(`No data found for key ${key}.`);
+                    console.log("No handle found.");
                 }
                 resolve(result || null);
             };
             request.onerror = () => {
-                console.error(
-                    `Error retrieving data for key: ${key}.`,
-                    request.error
-                );
+                console.error("Error retrieving handle:", request.error);
                 reject(request.error);
             };
         });
 
-    storeInDB = (db: IDBDatabase, key: string, value: any): Promise<void> =>
+    setHandle = (handle: FileSystemDirectoryHandle): Promise<void> =>
         new Promise((resolve, reject) => {
-            const request = db
-                .transaction("data", "readwrite")
-                .objectStore("data")
-                .put({ key, value });
+            const request = this.db!.transaction("handle", "readwrite")
+                .objectStore("handle")
+                .put(handle, "handle");
             request.onsuccess = () => {
-                console.log(`Data stored successfully for key: ${key}.`);
+                console.log("Handle stored.");
                 resolve();
             };
             request.onerror = () => {
-                console.error(
-                    `Error storing data for key: ${key}.`,
-                    request.error
-                );
+                console.error("Error storing handle.");
                 reject(request.error);
             };
         });
 
-    deleteDB = (): Promise<void> =>
+    delete = (): Promise<void> =>
         new Promise((resolve, reject) => {
             const request = indexedDB.deleteDatabase("screenshots");
             request.onsuccess = () => {
@@ -80,77 +71,70 @@ export class Data {
             };
         });
 
-    async checkDB(): Promise<Map<string, string[]> | null> {
-        if (
-            (await indexedDB.databases()).some(
-                (db) => db.name === "screenshots"
-            )
-        )
-            return this.getFromDB(await this.getDB(), "data");
+    async getScreenshots(): Promise<Map<string, string[]> | null> {
+        let handle = null;
+        // whether from onInit or getScreenshots, we'll need this.db for getHandle or setHandle
+        if (!this.db) this.db = await this.getDB();
+        const count = await new Promise<number>((resolve) => {
+            const request = this.db!.transaction("handle", "readonly")
+                .objectStore("handle")
+                .count();
+            request.onsuccess = () => resolve(request.result);
+        });
+        try {
+            // if no data in database, try to open the directory picker for the user to select his screenshots folder
+            if (!count) {
+                handle = await window.showDirectoryPicker();
+                await this.setHandle(handle);
+            } else handle = await this.getHandle(); // else try to read an existing handle
+        } catch (error) {
+            // showDirectoryPicker will SecurityError when from onInit since not an user input, try to read an existing handle
+            if (error instanceof DOMException && error.name === "SecurityError")
+                handle = await this.getHandle();
+        }
+        // if we got the screenshots folder's handle, parse it into a Map<game name, screenshots names>
+        if (handle) {
+            const folderEntries: [string, string[]][] = [];
+            for await (const folder of handle.values()) {
+                if (folder.kind === "directory") {
+                    const folderHandle = folder as FileSystemDirectoryHandle;
+                    const pngFiles: string[] = [];
+                    for await (const file of folderHandle.values()) {
+                        if (
+                            file.kind === "file" &&
+                            file.name.endsWith(".png") &&
+                            file.name !== `${folder.name}.png`
+                        ) {
+                            pngFiles.push(file.name.replace(".png", ""));
+                        }
+                    }
+                    folderEntries.push([folder.name, pngFiles]);
+                }
+            }
+            console.log(`Screenshots retrieved at ${handle.name}/.`);
+            return new Map(folderEntries);
+        }
         return null;
     }
 
-    async getData(): Promise<Map<string, string[]> | null> {
-        try {
-            const handle = await window.showDirectoryPicker({
-                mode: "readwrite",
-            });
-            const text = await(await(await handle.getFileHandle("data.tsv")).getFile()).text();
-            const data = parse(text, {
-                delimiter: "\t",
-            }).reduce(
-                (
-                    acc: Map<string, string[]>,
-                    { game, id, description }: any
-                ) => {
-                    const gameData = acc.get(game) || [];
-                    gameData[id] = description;
-                    acc.set(game, gameData);
-                    return acc;
-                },
-                new Map<string, string[]>()
-            );
-            const db = await this.getDB();
-            await this.storeInDB(db, "handle", handle);
-            await this.storeInDB(db, "data", data);
-            return data;
-        } catch {
-            return null;
-        }
-    }
-
-    async addData(
+    async addScreenshot(
+        game: string,
         name: string,
-        id: number = 0,
-        description: string = "poster"
+        url: string
     ): Promise<void> {
-        const db = await this.getDB();
-        const data = await this.getFromDB(db, "data");
-        const handle = await (await this.getFromDB(db, "handle")).getFileHandle("data.tsv");
-        const writable = await handle.createWritable();
-        await writable.write(
-            (await (await handle.getFile()).text()) +
-                `${name}\t${id}\t${description}\n`
-        );
-        await writable.close();
-        await this.storeInDB(
-            db,
-            "data",
-            new Map(data).set(name, [description])
-        );
-    }
-
-    async saveImage(game: string, url: string): Promise<void> {
-        const handle = await this.getFromDB(await this.getDB(), "handle");
+        // download screenshot at (created if doesnt exists) *game name*/*screenshot name*.png
         const blob = await (await fetch(url)).blob();
-        const gameFolderHandle = await handle.getDirectoryHandle(game, {
+        const gameHandle = await (
+            await this.getHandle()
+        ).getDirectoryHandle(game, {
             create: true,
         });
-        const imageFileHandle = await gameFolderHandle.getFileHandle("0.png", {
+        const screenshotHandle = await gameHandle.getFileHandle(`${name}.png`, {
             create: true,
         });
-        const writable = await imageFileHandle.createWritable();
+        const writable = await screenshotHandle.createWritable();
         await writable.write(blob);
         await writable.close();
+        console.log(`${game}/${name}.png downloaded.`);
     }
 }
