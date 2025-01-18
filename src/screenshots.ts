@@ -33,9 +33,17 @@ import { Dialog } from "./dialog";
             <mat-grid-list cols="4">
                 <mat-grid-tile *ngFor="let screenshot of screenshots">
                     <div class="container">
+                        <div class="buttons">
+                            <button
+                                mat-icon-button
+                                (click)="removeScreenshot(screenshot.name)"
+                            >
+                                <mat-icon>delete_outline</mat-icon>
+                            </button>
+                        </div>
                         <img
                             [src]="screenshot.src"
-                            [alt]="screenshot.name + ' missing'"
+                            alt="Restart the app"
                             class="fill"
                         />
                         <div class="description">
@@ -60,7 +68,7 @@ import { Dialog } from "./dialog";
             .buttons {
                 display: flex;
                 flex-direction: column;
-                position: fixed;
+                position: absolute;
                 top: 0;
                 right: 0;
             }
@@ -89,6 +97,7 @@ import { Dialog } from "./dialog";
                 width: 100%;
                 height: 100%;
                 object-fit: scale-down;
+                color: white;
             }
         `,
     ],
@@ -106,24 +115,26 @@ export class Screenshots {
     }
 
     async ngOnInit(): Promise<void> {
-        await this.loadScreenshots();
+        this.loadScreenshots();
     }
 
     async getScreenshots(): Promise<void> {
-        await this.loadScreenshots();
+        this.loadScreenshots();
     }
 
     private async loadScreenshots(): Promise<void> {
-        const data = await this.data.getScreenshots();
-        if (data) {
-            this.screenshots = data
-                .get(this.game)!
-                .filter((info: Info) => info.name !== this.game)
-                .map((info: Info) => ({
-                    name: info.name,
-                    src: info.src,
-                }));
-        }
+        this.data
+            .getScreenshots()
+            .then((screenshots) => {
+                this.screenshots = screenshots
+                    .get(this.game)!
+                    .filter((info: Info) => info.name !== this.game)
+                    .map((info: Info) => ({
+                        name: info.name,
+                        src: info.src,
+                    }));
+            })
+            .catch(() => {});
     }
 
     openDialog(): void {
@@ -137,18 +148,23 @@ export class Screenshots {
             .afterClosed()
             .subscribe(async (result) => {
                 if (result) {
-                    const src = await this.data.addScreenshot(
-                        this.game,
-                        result.name,
-                        result.src
-                    );
-                    if (src) {
-                        this.screenshots.push({
-                            name: result.name,
-                            src,
+                    this.data
+                        .addScreenshot(this.game, result.name, result.src)
+                        .then((src) => {
+                            this.screenshots.push({
+                                name: result.name,
+                                src,
+                            });
                         });
-                    }
                 }
             });
+    }
+
+    async removeScreenshot(name: string): Promise<void> {
+        this.data.delete(this.game, name).then(() => {
+            this.screenshots = this.screenshots.filter(
+                (info) => info.name !== name
+            );
+        });
     }
 }

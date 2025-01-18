@@ -33,10 +33,18 @@ import { Dialog } from "./dialog";
             <mat-grid-list cols="4">
                 <mat-grid-tile *ngFor="let game of games">
                     <div class="container">
+                        <div class="buttons">
+                            <button
+                                mat-icon-button
+                                (click)="removeGame(game.name)"
+                            >
+                                <mat-icon>delete_outline</mat-icon>
+                            </button>
+                        </div>
                         <a [routerLink]="[game.name]">
                             <img
                                 [src]="game.src"
-                                [alt]="game.name + ' missing'"
+                                alt="Restart the app"
                                 class="fill"
                             />
                         </a>
@@ -48,7 +56,7 @@ import { Dialog } from "./dialog";
             </mat-grid-list>
 
             <div class="buttons">
-                <button mat-icon-button (click)="openDialog()">
+                <button mat-icon-button (click)="addGame()">
                     <mat-icon>add_circle_outline</mat-icon>
                 </button>
                 <button mat-icon-button (click)="this.data.delete()">
@@ -62,7 +70,7 @@ import { Dialog } from "./dialog";
             .buttons {
                 display: flex;
                 flex-direction: column;
-                position: fixed;
+                position: absolute;
                 top: 0;
                 right: 0;
             }
@@ -91,6 +99,7 @@ import { Dialog } from "./dialog";
                 width: 100%;
                 height: 100%;
                 object-fit: scale-down;
+                color: white;
             }
         `,
     ],
@@ -101,25 +110,27 @@ export class Games {
     constructor(protected data: Data, private dialog: MatDialog) {}
 
     async ngOnInit(): Promise<void> {
-        await this.loadGames();
+        this.loadGames();
     }
 
     async getScreenshots(): Promise<void> {
-        await this.loadGames();
+        this.loadGames();
     }
 
     private async loadGames(): Promise<void> {
-        const data = await this.data.getScreenshots();
-        if (data) {
-            this.games = Array.from(data.entries())
-                .map(([game, infos]) =>
-                    infos.find((info) => info.name === game)
-                )
-                .filter((info) => info !== undefined);
-        }
+        this.data
+            .getScreenshots()
+            .then((screenshots) => {
+                this.games = Array.from(screenshots.entries())
+                    .map(([game, infos]) =>
+                        infos.find((info) => info.name === game)
+                    )
+                    .filter((info) => info !== undefined);
+            })
+            .catch(() => {});
     }
 
-    openDialog(): void {
+    addGame(): void {
         this.dialog
             .open(Dialog, {
                 data: {
@@ -131,12 +142,21 @@ export class Games {
             .subscribe(async (result) => {
                 if (result) {
                     // game's icon "screenshot" has its name
-                    (await this.data.addScreenshot(
-                        result.name,
-                        result.name,
-                        result.src
-                    )) && this.games.push(result.name);
+                    this.data
+                        .addScreenshot(result.name, result.name, result.src)
+                        .then((src) => {
+                            this.games.push({
+                                name: result.name,
+                                src,
+                            });
+                        });
                 }
             });
+    }
+
+    async removeGame(game: string): Promise<void> {
+        this.data.delete(game).then(() => {
+            this.games = this.games.filter((info) => info.name !== game);
+        });
     }
 }
