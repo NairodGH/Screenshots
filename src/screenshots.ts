@@ -59,6 +59,8 @@ import { Dialog } from "./dialog";
                 >
                     <input matSliderThumb [(ngModel)]="cols" />
                 </mat-slider>
+                <span style="flex: 1 1 auto;"></span>
+                <span>Screenshots</span>
             </mat-toolbar>
             <mat-grid-list [cols]="cols">
                 <mat-grid-tile *ngFor="let screenshot of screenshots">
@@ -171,7 +173,8 @@ export class Screenshots {
                     .map((info: Info) => ({
                         name: info.name,
                         src: info.src,
-                    }));
+                    }))
+                    .sort((a, b) => a.name.localeCompare(b.name));
             })
             .catch(() => {});
     }
@@ -194,6 +197,9 @@ export class Screenshots {
                                 name: result.name,
                                 src,
                             });
+                            this.screenshots.sort((a, b) =>
+                                a.name.localeCompare(b.name)
+                            );
                         });
                 }
             });

@@ -59,6 +59,8 @@ import { Dialog } from "./dialog";
                 >
                     <input matSliderThumb [(ngModel)]="cols" />
                 </mat-slider>
+                <span style="flex: 1 1 auto;"></span>
+                <span>Games</span>
             </mat-toolbar>
             <mat-grid-list [cols]="cols">
                 <mat-grid-tile *ngFor="let game of games">
@@ -146,7 +148,8 @@ export class Games {
                     .map(([game, infos]) =>
                         infos.find((info) => info.name === game)
                     )
-                    .filter((info) => info !== undefined);
+                    .filter((info) => info !== undefined)
+                    .sort((a, b) => a.name.localeCompare(b.name));
             })
             .catch(() => {});
     }
@@ -170,6 +173,9 @@ export class Games {
                                 name: result.name,
                                 src,
                             });
+                            this.games.sort((a, b) =>
+                                a.name.localeCompare(b.name)
+                            );
                         });
                 }
             });

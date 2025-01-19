@@ -20,7 +20,7 @@ import { MatInputModule } from "@angular/material/input";
         <div mat-dialog-content align="center">
             <form #form="ngForm">
                 <mat-form-field appearance="fill">
-                    <mat-label>Description</mat-label>
+                    <mat-label>Name</mat-label>
                     <input
                         matInput
                         [(ngModel)]="data.name"
@@ -34,11 +34,10 @@ import { MatInputModule } from "@angular/material/input";
                     (drop)="handleFile($event)"
                     [class.hasImage]="data.src"
                 >
-                    <p *ngIf="!data.src">Drag & Drop an image here</p>
+                    <p *ngIf="!data.src">Paste or drag and drop an image here</p>
                     <img
                         *ngIf="data.src"
                         [src]="data.src"
-                        alt="Dropped Image"
                     />
                 </div>
                 <mat-error *ngIf="!data.src && form.submitted">
