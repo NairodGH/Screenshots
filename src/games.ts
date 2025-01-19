@@ -6,6 +6,9 @@ import { MatGridListModule } from "@angular/material/grid-list";
 import { MatButtonModule } from "@angular/material/button";
 import { MatIconModule } from "@angular/material/icon";
 import { FormsModule } from "@angular/forms";
+import { MatTooltipModule } from "@angular/material/tooltip";
+import { MatSliderModule } from "@angular/material/slider";
+import { MatToolbarModule } from "@angular/material/toolbar";
 import { Data, Info } from "./data";
 import { Dialog } from "./dialog";
 
@@ -18,6 +21,9 @@ import { Dialog } from "./dialog";
         MatGridListModule,
         MatButtonModule,
         FormsModule,
+        MatTooltipModule,
+        MatSliderModule,
+        MatToolbarModule,
     ],
     template: `
         <link
@@ -30,13 +36,38 @@ import { Dialog } from "./dialog";
         </div>
 
         <div *ngIf="this.data.db">
-            <mat-grid-list cols="4">
+            <mat-toolbar>
+                <button
+                    mat-icon-button
+                    (click)="addGame()"
+                    matTooltip="Add game"
+                >
+                    <mat-icon>add_circle_outline</mat-icon>
+                </button>
+                <button
+                    mat-icon-button
+                    (click)="this.data.delete()"
+                    matTooltip="Clear data"
+                >
+                    <mat-icon>clear</mat-icon>
+                </button>
+                <mat-slider
+                    min="2"
+                    max="10"
+                    step="1"
+                    matTooltip="Change columns"
+                >
+                    <input matSliderThumb [(ngModel)]="cols" />
+                </mat-slider>
+            </mat-toolbar>
+            <mat-grid-list [cols]="cols">
                 <mat-grid-tile *ngFor="let game of games">
                     <div class="container">
                         <div class="buttons">
                             <button
                                 mat-icon-button
                                 (click)="removeGame(game.name)"
+                                matTooltip="Delete game"
                             >
                                 <mat-icon>delete_outline</mat-icon>
                             </button>
@@ -54,15 +85,6 @@ import { Dialog } from "./dialog";
                     </div>
                 </mat-grid-tile>
             </mat-grid-list>
-
-            <div class="buttons">
-                <button mat-icon-button (click)="addGame()">
-                    <mat-icon>add_circle_outline</mat-icon>
-                </button>
-                <button mat-icon-button (click)="this.data.delete()">
-                    <mat-icon>delete_outline</mat-icon>
-                </button>
-            </div>
         </div>
     `,
     styles: [
@@ -92,20 +114,19 @@ import { Dialog } from "./dialog";
                 width: 100%;
                 text-align: center;
                 background-color: rgba(0, 0, 0, 0.5);
-                color: white;
             }
 
             .fill {
                 width: 100%;
                 height: 100%;
                 object-fit: scale-down;
-                color: white;
             }
         `,
     ],
 })
 export class Games {
     protected games: Info[] = [];
+    protected cols: number = 4;
 
     constructor(protected data: Data, private dialog: MatDialog) {}
 

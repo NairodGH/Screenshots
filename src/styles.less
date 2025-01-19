@@ -1,9 +1,14 @@
-@import "../node_modules/@angular/material/prebuilt-themes/purple-green.css";
+@import "../node_modules/@angular/material/prebuilt-themes/cyan-orange.css"; //for non-color related css
 
 html,
 body {
     height: 100%;
     margin: 0;
-    background-color: #111213;
-    color: white;
+    background-color: #101414;
+    --mat-sys-primary: white; //mat-slider color
+    --mat-sys-inverse-surface: #101414; //mat-toolbar background color
+}
+
+* {
+    color: white !important;
 }
